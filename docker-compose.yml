@@ -1,0 +1,19 @@
+version: "3.1"
+
+services:
+  gwq5210_v2raya:
+    image: mzz2017/v2raya:latest
+    container_name: gwq5210_v2raya
+    restart: always
+    privileged: true
+    network_mode: host
+    volumes:
+      - /etc/v2raya:/etc/v2raya
+      - /lib/modules:/lib/modules:ro
+      - /etc/resolv.conf:/etc/resolv.conf
+    ports:
+      - "2017:2017"
+      - "20170-20172:20170-20172"
+    environment:
+      TZ: Asia/Shanghai
+      V2RAYA_ADDRESS: 0.0.0.0:2017
