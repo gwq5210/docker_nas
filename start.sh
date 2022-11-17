@@ -2,4 +2,4 @@
 
 cd `dirname "$0"`
 
-./stack_deploy.sh docker_nas docker-compose.yml
+docker-compose up -d
