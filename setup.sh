@@ -18,5 +18,6 @@ dir_array[${#dir_array[@]}]=${DOCKER_NAS_DATA_DIR}/mariadb
 
 for dir in ${dir_array[@]};
 do
+  echo "mkdir -p $dir"
   mkdir -p $dir
 done
