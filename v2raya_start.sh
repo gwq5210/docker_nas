@@ -2,4 +2,4 @@
 
 cd `dirname "$0"`
 
-docker-compose -f docker-compose-v2raya.yml up -d
+docker-compose up -d v2raya

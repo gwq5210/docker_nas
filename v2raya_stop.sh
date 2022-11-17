@@ -2,4 +2,4 @@
 
 cd `dirname "$0"`
 
-docker-compose -f docker-compose-v2raya.yml stop
+docker-compose stop v2raya

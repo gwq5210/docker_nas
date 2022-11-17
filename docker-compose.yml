@@ -1,10 +1,27 @@
 version: "3.1"
 
 services:
-  gwq5210_photoprism:
+  v2raya:
+    image: mzz2017/v2raya:latest
+    container_name: v2raya
+    restart: always
+    privileged: true
+    network_mode: host
+    volumes:
+      - /etc/v2raya:/etc/v2raya
+      - /lib/modules:/lib/modules:ro
+      - /etc/resolv.conf:/etc/resolv.conf
+    ports:
+      - "2017:2017"
+      - "20170-20172:20170-20172"
+    environment:
+      TZ: Asia/Shanghai
+      V2RAYA_ADDRESS: 0.0.0.0:2017
+
+  photoprism:
     image: photoprism/photoprism:latest
     depends_on:
-      - gwq5210_mariadb
+      - mariadb
     ## Don't enable automatic restarts until PhotoPrism has been properly configured and tested!
     ## If the service gets stuck in a restart loop, this points to a memory, filesystem, network, or database issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
@@ -12,8 +29,7 @@ services:
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
-    ports:
-      - "2342:2342" # HTTP port (host:container)
+    network_mode: 'host'
     environment:
       PHOTOPRISM_ADMIN_USER: "gwq5210"                 # admin username
       PHOTOPRISM_ADMIN_PASSWORD: "a123456789"          # initial admin password (minimum 8 characters)
@@ -37,7 +53,7 @@ services:
       PHOTOPRISM_UPLOAD_NSFW: "true"                 # allows uploads that MAY be offensive (no effect without TensorFlow)
       # PHOTOPRISM_DATABASE_DRIVER: "sqlite"         # SQLite is an embedded database that doesn't require a server
       PHOTOPRISM_DATABASE_DRIVER: "mysql"            # use MariaDB 10.5+ or MySQL 8+ instead of SQLite for improved performance
-      PHOTOPRISM_DATABASE_SERVER: "gwq5210_mariadb:3306"     # MariaDB or MySQL database server (hostname:port)
+      PHOTOPRISM_DATABASE_SERVER: "mariadb:3306"     # MariaDB or MySQL database server (hostname:port)
       PHOTOPRISM_DATABASE_NAME: "photoprism"         # MariaDB or MySQL database schema name
       PHOTOPRISM_DATABASE_USER: "photoprism"         # MariaDB or MySQL database user name
       PHOTOPRISM_DATABASE_PASSWORD: "a123456789"       # MariaDB or MySQL database user password
@@ -76,10 +92,11 @@ services:
 
   ## Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
-  gwq5210_mariadb:
+  mariadb:
     ## If MariaDB gets stuck in a restart loop, this points to a memory or filesystem issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
     restart: unless-stopped
+    network_mode: 'host'
     image: mariadb:latest
     security_opt: # see https://github.com/MariaDB/mariadb-docker/issues/434#issuecomment-1136151239
       - seccomp:unconfined
@@ -99,10 +116,19 @@ services:
   portainer:
     image: gwq5210/portainer:latest
     command: --tlsskipverify
-    ports:
-      - "9443:9443"
+    network_mode: 'host'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DOCKER_NAS_DATA_DIR}/portainer:/data
     environment:
       TZ: Asia/Shanghai
+
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    network_mode: 'host'
+    volumes:
+      - ${DOCKER_NAS_CONF_DIR}/jellyfin:/config
+      - ${DOCKER_NAS_DATA_DIR}/jellyfin/cache:/cache
+      - ${DOCKER_NAS_DATA_DIR}/jellyfin/media:/media
+    restart: 'unless-stopped'
