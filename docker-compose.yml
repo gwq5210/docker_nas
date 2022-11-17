@@ -5,6 +5,7 @@ services:
     image: mzz2017/v2raya:latest
     container_name: gwq5210_v2raya
     restart: always
+    user: root
     privileged: true
     network_mode: host
     volumes:
