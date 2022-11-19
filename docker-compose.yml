@@ -11,9 +11,6 @@ services:
       - /etc/v2raya:/etc/v2raya
       - /lib/modules:/lib/modules:ro
       - /etc/resolv.conf:/etc/resolv.conf
-    ports:
-      - "2017:2017"
-      - "20170-20172:20170-20172"
     environment:
       TZ: Asia/Shanghai
       V2RAYA_ADDRESS: 0.0.0.0:2017
@@ -29,8 +26,10 @@ services:
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
-    network_mode: 'host'
+    ports:
+      - "2342:2342" # HTTP port (host:container)
     environment:
+      TZ: Asia/Shanghai
       PHOTOPRISM_ADMIN_USER: "gwq5210"                 # admin username
       PHOTOPRISM_ADMIN_PASSWORD: "a123456789"          # initial admin password (minimum 8 characters)
       PHOTOPRISM_AUTH_MODE: "password"               # authentication mode (public, password)
@@ -61,10 +60,12 @@ services:
       PHOTOPRISM_SITE_DESCRIPTION: ""                # meta site description
       PHOTOPRISM_SITE_AUTHOR: "gwq5210"                     # meta site author
       ## Run/install on first startup (options: update https gpu tensorflow davfs clitools clean):
-      # PHOTOPRISM_INIT: "https gpu tensorflow"
+      PHOTOPRISM_INIT: "tensorflow"
       ## Hardware Video Transcoding:
-      # PHOTOPRISM_FFMPEG_ENCODER: "software"        # FFmpeg encoder ("software", "intel", "nvidia", "apple", "raspberry")
+      PHOTOPRISM_FFMPEG_ENCODER: "nvidia"        # FFmpeg encoder ("software", "intel", "nvidia", "apple", "raspberry")
       # PHOTOPRISM_FFMPEG_BITRATE: "32"              # FFmpeg encoding bitrate limit in Mbit/s (default: 50)
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,video,utility"
       ## Run as a non-root user after initialization (supported: 0, 33, 50-99, 500-600, and 900-1200):
       # PHOTOPRISM_UID: 1000
       # PHOTOPRISM_GID: 1000
@@ -72,11 +73,10 @@ services:
     ## Start as non-root user before initialization (supported: 0, 33, 50-99, 500-600, and 900-1200):
     # user: "1000:1000"
     ## Share hardware devices with FFmpeg and TensorFlow (optional):
-    # devices:
-    #  - "/dev/dri:/dev/dri"                         # Intel QSV
-    #  - "/dev/nvidia0:/dev/nvidia0"                 # Nvidia CUDA
-    #  - "/dev/nvidiactl:/dev/nvidiactl"
-    #  - "/dev/nvidia-modeset:/dev/nvidia-modeset"
+    devices:
+     - "/dev/nvidia0:/dev/nvidia0"                 # Nvidia CUDA
+     - "/dev/nvidiactl:/dev/nvidiactl"
+     - "/dev/nvidia-modeset:/dev/nvidia-modeset"
     #  - "/dev/nvidia-nvswitchctl:/dev/nvidia-nvswitchctl"
     #  - "/dev/nvidia-uvm:/dev/nvidia-uvm"
     #  - "/dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools"
@@ -89,6 +89,13 @@ services:
       # - "/example/family:/photoprism/originals/family" # *Additional* media folders can be mounted like this
       - "${DOCKER_NAS_DATA_DIR}/photoprism/import:/photoprism/import"                  # *Optional* base folder from which files can be imported to originals
       - "${DOCKER_NAS_DATA_DIR}/photoprism/storage:/photoprism/storage"                  # *Writable* storage folder for cache, database, and sidecar files (DO NOT REMOVE)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: "nvidia"
+              count: 1
+              capabilities: [gpu]
 
   ## Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
@@ -96,7 +103,10 @@ services:
     ## If MariaDB gets stuck in a restart loop, this points to a memory or filesystem issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
     restart: unless-stopped
-    network_mode: 'host'
+    ports:
+      - "3306:3306"
+      - "33060:33060"
+      - "33061:33061"
     image: mariadb:latest
     security_opt: # see https://github.com/MariaDB/mariadb-docker/issues/434#issuecomment-1136151239
       - seccomp:unconfined
@@ -106,6 +116,7 @@ services:
     volumes:
       - "${DOCKER_NAS_DATA_DIR}/mariadb:/var/lib/mysql" # DO NOT REMOVE
     environment:
+      TZ: Asia/Shanghai
       MARIADB_AUTO_UPGRADE: "1"
       MARIADB_INITDB_SKIP_TZINFO: "1"
       MARIADB_DATABASE: "photoprism"
@@ -116,7 +127,8 @@ services:
   portainer:
     image: gwq5210/portainer:latest
     command: --tlsskipverify
-    network_mode: 'host'
+    ports:
+      - "9443:9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DOCKER_NAS_DATA_DIR}/portainer:/data
@@ -124,7 +136,7 @@ services:
       TZ: Asia/Shanghai
 
   jellyfin:
-    image: jellyfin/jellyfin
+    image: jellyfin/jellyfin:latest
     container_name: jellyfin
     network_mode: 'host'
     volumes:
@@ -132,3 +144,39 @@ services:
       - ${DOCKER_NAS_DATA_DIR}/jellyfin/cache:/cache
       - ${DOCKER_NAS_DATA_DIR}/jellyfin/media:/media
     restart: 'unless-stopped'
+    environment:
+      TZ: Asia/Shanghai
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  nextcloud:
+    image: nextcloud
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+      - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
+    depends_on:
+      - mariadb
+    environment:
+      - TZ=Asia/Shanghai
+      - MYSQL_PASSWORD=a123456789
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=mariadb
+
+  nginx:
+    image: gwq5210/nginx:latest
+    restart: always
+    depends_on:
+      - nextcloud
+    ports:
+      - 8080:80
+    volumes:
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
+    environment:
+      - TZ=Asia/Shanghai
