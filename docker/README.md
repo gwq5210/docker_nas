@@ -22,3 +22,7 @@ systemctl daemon-reload
 
 重启docker
 systemctl restart docker
+
+在 网站根目录/config/config.php 的最后一行中添加
+
+  'default_phone_region' => 'CN',

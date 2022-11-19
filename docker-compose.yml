@@ -17,6 +17,7 @@ services:
 
   photoprism:
     image: photoprism/photoprism:latest
+    container_name: photoprism
     depends_on:
       - mariadb
     ## Don't enable automatic restarts until PhotoPrism has been properly configured and tested!
@@ -26,8 +27,9 @@ services:
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
-    ports:
-      - "2342:2342" # HTTP port (host:container)
+    # ports:
+    #   - "2342:2342" # HTTP port (host:container)
+    network_mode: host
     environment:
       TZ: Asia/Shanghai
       PHOTOPRISM_ADMIN_USER: "gwq5210"                 # admin username
@@ -103,10 +105,12 @@ services:
     ## If MariaDB gets stuck in a restart loop, this points to a memory or filesystem issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
     restart: unless-stopped
-    ports:
-      - "3306:3306"
-      - "33060:33060"
-      - "33061:33061"
+    container_name: mariadb
+    network_mode: host
+    # ports:
+    #   - "3306:3306"
+    #   - "33060:33060"
+    #   - "33061:33061"
     image: mariadb:latest
     security_opt: # see https://github.com/MariaDB/mariadb-docker/issues/434#issuecomment-1136151239
       - seccomp:unconfined
@@ -126,9 +130,11 @@ services:
 
   portainer:
     image: gwq5210/portainer:latest
+    container_name: portainer
     command: --tlsskipverify
-    ports:
-      - "9443:9443"
+    network_mode: host
+    # ports:
+    #   - "9443:9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DOCKER_NAS_DATA_DIR}/portainer:/data
@@ -154,6 +160,8 @@ services:
 
   nextcloud:
     image: nextcloud:fpm
+    container_name: nextcloud
+    network_mode: host
     restart: always
     volumes:
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
@@ -178,11 +186,13 @@ services:
 
   nginx:
     image: gwq5210/nginx:latest
+    container_name: nginx
     restart: always
     depends_on:
       - nextcloud
-    ports:
-      - 8080:80
+    network_mode: host
+    # ports:
+    #   - 8080:8080
     volumes:
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
@@ -190,11 +200,14 @@ services:
       - TZ=Asia/Shanghai
 
   redis:
+    container_name: redis
     image: redis:alpine
+    network_mode: host
     restart: always
 
   nextcloud_cron:
     image: nextcloud:fpm
+    container_name: nextcloud_cron
     restart: always
     volumes:
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
