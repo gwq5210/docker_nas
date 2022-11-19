@@ -111,7 +111,7 @@ services:
     security_opt: # see https://github.com/MariaDB/mariadb-docker/issues/434#issuecomment-1136151239
       - seccomp:unconfined
       - apparmor:unconfined
-    command: mysqld --innodb-buffer-pool-size=512M --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max-connections=512 --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=120
+    command: mysqld --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max-connections=512 --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=120 --innodb_flush_log_at_trx_commit=0
     ## Never store database files on an unreliable device such as a USB flash drive, an SD card, or a shared network folder:
     volumes:
       - "${DOCKER_NAS_DATA_DIR}/mariadb:/var/lib/mysql" # DO NOT REMOVE
@@ -153,20 +153,28 @@ services:
             - capabilities: [gpu]
 
   nextcloud:
-    image: nextcloud
+    image: nextcloud:fpm
     restart: always
-    ports:
-      - 8080:80
     volumes:
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
+      - ./nextcloud/config/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
     depends_on:
       - mariadb
+      - redis
     environment:
       - TZ=Asia/Shanghai
       - MYSQL_PASSWORD=a123456789
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
       - MYSQL_HOST=mariadb
+      - PHP_MEMORY_LIMIT=8192M
+      - PHP_UPLOAD_LIMIT=102400M
+      - REDIS_HOST=redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
 
   nginx:
     image: gwq5210/nginx:latest
@@ -180,3 +188,17 @@ services:
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
     environment:
       - TZ=Asia/Shanghai
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  nextcloud_cron:
+    image: nextcloud:fpm
+    restart: always
+    volumes:
+      - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - mariadb
+      - redis

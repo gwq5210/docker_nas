@@ -3,8 +3,6 @@
   "exec-opts": [
     "native.cgroupdriver=cgroupfs"
   ],
-  "iptables": false,
-  "bridge": "none",
   "runtimes": {
     "nvidia": {
       "path": "/usr/bin/nvidia-container-runtime",
