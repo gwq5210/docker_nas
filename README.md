@@ -11,3 +11,13 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-
 sudo chmod +x /usr/bin/docker-compose
 docker-compose --version
 ```
+
+As other answers have mentioned, the solution is don't use localhost. Even changing to 127.0.0.1 appears to be sufficient *(see note below)
+
+Explanation:
+No such file or directory is the result of mysql attempting to connect over a local socket. This happens when either of these settings is set to localhost:
+
+Database host field of the WebUI
+environment variable MYSQL_HOST
+*Note: in the case of #2, it is not sufficient to "fix" the Database host field in the WebUI, the environment variable MYSQL_HOST always takes precedence.
+(This is true as of NextCloud version 25.0.0.18)

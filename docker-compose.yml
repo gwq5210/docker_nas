@@ -23,13 +23,13 @@ services:
     ## Don't enable automatic restarts until PhotoPrism has been properly configured and tested!
     ## If the service gets stuck in a restart loop, this points to a memory, filesystem, network, or database issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
-    # restart: unless-stopped
+    restart: always
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
-    # ports:
-    #   - "2342:2342" # HTTP port (host:container)
-    network_mode: host
+    ports:
+      - "2342:2342" # HTTP port (host:container)
+    # network_mode: host
     environment:
       TZ: Asia/Shanghai
       PHOTOPRISM_ADMIN_USER: "gwq5210"                 # admin username
@@ -104,13 +104,13 @@ services:
   mariadb:
     ## If MariaDB gets stuck in a restart loop, this points to a memory or filesystem issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
-    restart: unless-stopped
+    restart: always
     container_name: mariadb
-    network_mode: host
-    # ports:
-    #   - "3306:3306"
-    #   - "33060:33060"
-    #   - "33061:33061"
+    # network_mode: host
+    ports:
+      - "3306:3306"
+      - "33060:33060"
+      - "33061:33061"
     image: mariadb:latest
     security_opt: # see https://github.com/MariaDB/mariadb-docker/issues/434#issuecomment-1136151239
       - seccomp:unconfined
@@ -132,9 +132,10 @@ services:
     image: gwq5210/portainer:latest
     container_name: portainer
     command: --tlsskipverify
-    network_mode: host
-    # ports:
-    #   - "9443:9443"
+    restart: always
+    # network_mode: host
+    ports:
+      - "9443:9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DOCKER_NAS_DATA_DIR}/portainer:/data
@@ -149,7 +150,7 @@ services:
       - ${DOCKER_NAS_CONF_DIR}/jellyfin:/config
       - ${DOCKER_NAS_DATA_DIR}/jellyfin/cache:/cache
       - ${DOCKER_NAS_DATA_DIR}/jellyfin/media:/media
-    restart: 'unless-stopped'
+    restart: always
     environment:
       TZ: Asia/Shanghai
     deploy:
@@ -161,7 +162,7 @@ services:
   nextcloud:
     image: nextcloud:fpm
     container_name: nextcloud
-    network_mode: host
+    # network_mode: host
     restart: always
     volumes:
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
@@ -190,9 +191,9 @@ services:
     restart: always
     depends_on:
       - nextcloud
-    network_mode: host
-    # ports:
-    #   - 8080:8080
+    # network_mode: host
+    ports:
+      - 8080:8080
     volumes:
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
@@ -202,7 +203,9 @@ services:
   redis:
     container_name: redis
     image: redis:alpine
-    network_mode: host
+    # network_mode: host
+    ports:
+      - 6379:6379
     restart: always
 
   nextcloud_cron:
@@ -211,6 +214,7 @@ services:
     restart: always
     volumes:
       - ${DOCKER_NAS_DATA_DIR}/nextcloud:/var/www/html
+      - ./nextcloud/config/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
     entrypoint: /cron.sh
     depends_on:
       - mariadb
