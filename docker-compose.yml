@@ -160,7 +160,7 @@ services:
             - capabilities: [gpu]
 
   nextcloud:
-    image: nextcloud:fpm
+    image: gwq5210/nextcloud:latest
     container_name: nextcloud
     # network_mode: host
     restart: always
@@ -211,7 +211,7 @@ services:
     restart: always
 
   nextcloud_cron:
-    image: nextcloud:fpm
+    image: gwq5210/nextcloud:latest
     container_name: nextcloud_cron
     restart: always
     volumes:
