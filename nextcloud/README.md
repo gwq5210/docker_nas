@@ -10,3 +10,7 @@
   'memcache.locking' => '\OC\Memcache\Redis',
   'filelocking.enabled' => 'true',
 ```
+
+
+https://github.com/pulsejet/memories/wiki/File-Type-Support
+https://github.com/pulsejet/memories/wiki/Configuration#imagevideo-support
