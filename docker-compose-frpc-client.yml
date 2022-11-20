@@ -1,0 +1,15 @@
+version: "3.1"
+
+services:
+  frpc_client:
+    image: snowdreamtech/frpc:latest
+    container_name: frpc_client
+    restart: always
+    volumes:
+      - ./frp/conf/frpc_client.ini:/etc/frp/frpc.ini
+      - /var/log/frp:/var/log/frp
+    ports:
+      - 220:220
+      - 221:221
+    environment:
+      - TZ=Asia/Shanghai
