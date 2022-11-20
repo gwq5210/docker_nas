@@ -7,6 +7,11 @@ $CONFIG = array (
 	  'host' => 'redis',
 	  'port' => 6379,
   ],
+  'trusted_domains' =>
+  array (
+    0 => 'truenas.local:8080',
+    1 => 'nextcloud.gwq5210.com',
+  ),
   'memcache.locking' => '\OC\Memcache\Redis',
   'filelocking.enabled' => 'true',
   'default_phone_region' => 'CN',
