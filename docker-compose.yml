@@ -222,3 +222,14 @@ services:
     depends_on:
       - mariadb
       - redis
+
+  frpc:
+    image: snowdreamtech/frpc:latest
+    container_name: frpc
+    restart: always
+    volumes:
+      - ./frp/conf/frpc.ini:/etc/frp/frpc.ini
+      - ${DOCKER_NAS_LOGS_DIR}/frp:/var/log/frp
+    network_mode: "host"
+    environment:
+      - TZ=Asia/Shanghai
