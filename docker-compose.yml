@@ -24,6 +24,7 @@ services:
     ## If the service gets stuck in a restart loop, this points to a memory, filesystem, network, or database issue:
     ## https://docs.photoprism.app/getting-started/troubleshooting/#fatal-server-errors
     restart: always
+    privileged: true
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
@@ -151,13 +152,16 @@ services:
       - ${DOCKER_NAS_DATA_DIR}/jellyfin/cache:/cache
       - ${DOCKER_NAS_DATA_DIR}/jellyfin/media:/media
     restart: always
+    privileged: true
     environment:
       TZ: Asia/Shanghai
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: "nvidia"
+              count: 1
+              capabilities: [gpu]
 
   nextcloud:
     image: gwq5210/nextcloud:latest
@@ -170,6 +174,7 @@ services:
     depends_on:
       - mariadb
       - redis
+    privileged: true
     environment:
       - TZ=Asia/Shanghai
       - MYSQL_PASSWORD=a123456789
@@ -233,3 +238,20 @@ services:
     network_mode: "host"
     environment:
       - TZ=Asia/Shanghai
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+      - WEBUI_PORT=6880
+    volumes:
+      - ${DOCKER_NAS_HOME}/qbittorrent/conf:/config
+      - ${DOCKER_NAS_DOWNLOADS}:/downloads
+    ports:
+      - 6880:6880
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
