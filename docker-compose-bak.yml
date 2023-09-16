@@ -181,7 +181,7 @@ services:
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
       - MYSQL_HOST=mariadb
-      - PHP_MEMORY_LIMIT=8192M
+      - PHP_MEMORY_LIMIT=1024M
       - PHP_UPLOAD_LIMIT=102400M
       - REDIS_HOST=redis
     devices:
