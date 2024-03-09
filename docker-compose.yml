@@ -112,7 +112,7 @@ services:
       - "3306:3306"
       - "33060:33060"
       - "33061:33061"
-    image: mariadb:latest
+    image: mariadb:10.9.4
     security_opt: # see https://github.com/MariaDB/mariadb-docker/issues/434#issuecomment-1136151239
       - seccomp:unconfined
       - apparmor:unconfined
