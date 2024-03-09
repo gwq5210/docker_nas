@@ -1,0 +1,6 @@
+{
+  "data-root": "/mnt/nas/ix-applications/docker",
+  "exec-opts": [
+    "native.cgroupdriver=cgroupfs"
+  ]
+}
